@@ -18,6 +18,7 @@ from .svt import *
 from .synthtext import *
 from .utils import *
 from .vocabs import *
+from .devanagari import *
 
 if is_tf_available():
     from .loader import *

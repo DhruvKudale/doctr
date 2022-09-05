@@ -169,6 +169,48 @@ def evaluate(model, val_loader, batch_transforms, val_metric, amp=False):
     result = val_metric.summary()
     return val_loss, result['raw'], result['unicase']
 
+@torch.no_grad()
+def evaluateTest(model, val_loader, batch_transforms, val_metric, amp=False):
+    alltargets =[]
+    allpreds = []
+    # Model in eval mode
+    model.eval()
+    # Reset val metric
+    val_metric.reset()
+    # Validation loop
+    val_loss, batch_cnt = 0, 0
+    for images, targets in val_loader:
+        if torch.cuda.is_available():
+            images = images.cuda()
+        images = batch_transforms(images)
+        if amp:
+            with torch.cuda.amp.autocast():
+                out = model(images, targets, return_preds=True)
+        else:
+            out = model(images, targets, return_preds=True)
+        # Compute metric
+        if len(out['preds']):
+            words, _ = zip(*out['preds'])
+        else:
+            words = []
+        val_metric.update(targets, words)
+        alltargets = alltargets + targets
+        allpreds = allpreds + list(words)
+        val_loss += out['loss'].item()
+        batch_cnt += 1
+
+    val_loss /= batch_cnt
+    result = val_metric.summary()
+
+    #Result in file
+    # open file in write mode
+    with open('results.txt', 'w') as fp:
+        fp.write("Predicted\t\t\tActual\n")
+        for i in range(len(alltargets)):
+            fp.write(str(allpreds[i]) + '\t\t\t' +  str(alltargets[i]) + '\n')
+        print('Done')
+    print(result)
+    return val_loss, result['raw'], result['unicase']
 
 def main(args):
 
@@ -255,7 +297,7 @@ def main(args):
 
     if args.test_only:
         print("Running evaluation")
-        val_loss, exact_match, partial_match = evaluate(model, val_loader, batch_transforms, val_metric, amp=args.amp)
+        val_loss, exact_match, partial_match = evaluateTest(model, val_loader, batch_transforms, val_metric, amp=args.amp)
         print(f"Validation loss: {val_loss:.6} (Exact: {exact_match:.2%} | Partial: {partial_match:.2%})")
         return
 

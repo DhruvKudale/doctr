@@ -32,7 +32,9 @@ def evaluate(model, val_loader, batch_transforms, val_metric, amp=False):
     val_loss, batch_cnt = 0, 0
     for images, targets in tqdm(val_loader):
         try:
-            targets = [t['labels'][0] for t in targets]
+            #targets = [t['labels'][0] for t in targets]
+            #targets = [t[0] for t in targets]
+            print(targets)
             if torch.cuda.is_available():
                 images = images.cuda()
             images = batch_transforms(images)
@@ -83,19 +85,19 @@ def main(args):
 
     st = time.time()
     ds = datasets.__dict__[args.dataset](
-        train=True,
-        download=True,
-        recognition_task=True,
-        use_polygons=args.regular,
-        img_transforms=T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
+        #train=True,
+        #download=True,
+        #recognition_task=True,
+        #use_polygons=args.regular,
+        #img_transforms=T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
     )
 
     _ds = datasets.__dict__[args.dataset](
-        train=False,
-        download=True,
-        recognition_task=True,
-        use_polygons=args.regular,
-        img_transforms=T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
+        #train=False,
+        #download=True,
+        #recognition_task=True,
+        #use_polygons=args.regular,
+        #img_transforms=T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
     )
     ds.data.extend([(np_img, target) for np_img, target in _ds.data])
 
